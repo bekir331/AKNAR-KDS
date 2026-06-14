@@ -1,0 +1,16 @@
+node_modules/
+.vs/
+bin/
+obj/
+dist/
+build/
+.env
+*.user
+*.suo
+*.db
+*.sqlite3
+.DS_Store
+Thumbs.db
+aknar-web/node_modules/
+AKNAR.API/bin/
+AKNAR.API/obj/

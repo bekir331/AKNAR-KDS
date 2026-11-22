@@ -1,4 +1,4 @@
-﻿
+
 using AKNAR.API.DTOS;
 using AKNAR.API.Models;
 using AKNAR.API.Services.Interfaces;
@@ -14,12 +14,14 @@ namespace AKNAR.API.Services
     {
         private readonly AknarKdsContext _context;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
       
 
-        public AuthService(AknarKdsContext context, IConfiguration config)
+        public AuthService(AknarKdsContext context, IConfiguration config, IEmailService emailService)
         {
             _context = context;
             _config = config;
+            _emailService = emailService;
         }
 
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
@@ -36,7 +38,14 @@ namespace AKNAR.API.Services
             if (!passwordCorrect) return null;
            
 
-        
+            if (!user.IsEmailVerified)
+            {
+                return new AuthResponseDto
+                {
+                    Message = "Lütfen önce e-posta adresinize gönderilen doğrulama linkine tıklayarak hesabınızı doğrulayın."
+                };
+            }
+
             return new AuthResponseDto
             {
                 Token = GenerateToken(user),
@@ -63,7 +72,7 @@ namespace AKNAR.API.Services
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
 
             if (existing != null) return null;
-         
+            var verificationToken = Guid.NewGuid().ToString();
             var user = new User
             {
                 FullName = dto.FullName,
@@ -71,7 +80,9 @@ namespace AKNAR.API.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
 
                 Role = "Producer",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                IsEmailVerified = false,
+                VerificationToken = verificationToken
             };
 
             _context.Users.Add(user);
@@ -87,14 +98,31 @@ namespace AKNAR.API.Services
             _context.Producers.Add(producer);
             await _context.SaveChangesAsync();
 
+            var verificationLink = $"http://localhost:5173/verify-email?userId={user.Id}&token={verificationToken}";
+            
+            var subject = "AKNAR KDS - E-posta Doğrulama";
+            var body = $@"
+                <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                    <h2>Hoş Geldiniz, {user.FullName}! 🍊</h2>
+                    <p>AKNAR KDS sistemine başarıyla kayıt oldunuz. Hesabınızı aktifleştirmek için lütfen aşağıdaki butona tıklayın:</p>
+                    <a href='{verificationLink}' style='display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #10b981; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold;'>Hesabımı Doğrula</a>
+                    <p>Eğer butona tıklayamıyorsanız, aşağıdaki linki tarayıcınıza kopyalayıp yapıştırabilirsiniz:</p>
+                    <p><a href='{verificationLink}'>{verificationLink}</a></p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;' />
+                    <p style='font-size: 12px; color: #999;'>Bu e-posta otomatik olarak gönderilmiştir. Lütfen cevaplamayınız.</p>
+                </div>";
+
+            // Asenkron olarak e-postayı gönder
+            _ = _emailService.SendEmailAsync(user.Email, subject, body);
+
             return new AuthResponseDto
             {
-                Token = GenerateToken(user),
+                Token = "", // Kayıt sonrası doğrudan giriş yapmasını engellemek için token boş dönüyoruz.
                 UserId = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role,
-                Message = "Kayıt başarılı."
+                Message = "Kayıt başarılı. Lütfen e-posta adresinize gönderilen doğrulama linkine tıklayın."
             };
         }
 
@@ -115,7 +143,8 @@ namespace AKNAR.API.Services
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = dto.Role,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                IsEmailVerified = true // Admin eklediği için direkt onaylı sayıyoruz.
             };
 
 
@@ -147,7 +176,8 @@ namespace AKNAR.API.Services
                 FullName = u.FullName,
                 Email = u.Email,
                 Role = u.Role,
-                Message = ""
+                Message = "",
+                CreatedAt = u.CreatedAt
             }).ToList();
         }
 
@@ -214,6 +244,27 @@ namespace AKNAR.API.Services
                     user.Producer.Address
                 } : null
             };
+        }
+
+        public async Task<bool> VerifyEmailAsync(int userId, string token)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+                return false;
+
+            // React StrictMode development ortamında useEffect'i arka arkaya 2 kez çalıştırır.
+            // İlk çalıştırmada token temizlenir, ikinci çalıştırmada token null olduğu için hata döner.
+            // Bu yüzden eğer kullanıcı zaten doğrulanmışsa doğrudan true dönüyoruz.
+            if (user.IsEmailVerified)
+                return true;
+
+            if (user.VerificationToken != token)
+                return false;
+
+            user.IsEmailVerified = true;
+            user.VerificationToken = null; // Token'ı bir kez kullandıktan sonra temizle
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

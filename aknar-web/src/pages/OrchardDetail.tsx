@@ -40,7 +40,8 @@ export default function OrchardDetail() {
     areaHectare: undefined, 
     location: '',
     latitude: undefined,
-    longitude: undefined
+    longitude: undefined,
+    imageUrl: undefined
   });
   const [loading, setLoading] = useState(true);
 
@@ -88,7 +89,8 @@ export default function OrchardDetail() {
         areaHectare: orchard.areaHectare, 
         location: orchard.location,
         latitude: orchard.latitude,
-        longitude: orchard.longitude
+        longitude: orchard.longitude,
+        imageUrl: orchard.imageUrl
       });
     }
     setShowEditModal(true);
@@ -140,11 +142,24 @@ export default function OrchardDetail() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/orchards')} style={{ marginBottom: '8px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/orchards')} style={{ marginBottom: '12px' }}>
             ← Geri
           </button>
-          <h1 className="page-title">🌿 {orchard?.name}</h1>
-          <p className="page-subtitle">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+            {orchard?.imageUrl ? (
+              <img 
+                src={orchard.imageUrl} 
+                alt={orchard.name} 
+                style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} 
+              />
+            ) : (
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                🌿
+              </div>
+            )}
+            <h1 className="page-title" style={{ margin: 0 }}>{orchard?.name}</h1>
+          </div>
+          <p className="page-subtitle" style={{ paddingLeft: '64px' }}>
             {orchard?.location && `📍 ${orchard.location}`}
             {orchard?.areaHectare && ` · ${orchard.areaHectare} hektar`}
           </p>
@@ -170,6 +185,7 @@ export default function OrchardDetail() {
           icon="🔬"
           color="#8b5cf6"
           sub={summary?.lastPrediction ? `%${summary.lastPrediction.confidence.toFixed(1)} doğruluk` : 'Henüz yok'}
+          imageUrl={summary?.lastPrediction?.imageUrl ? `${(import.meta.env.VITE_API_URL || 'http://localhost:5139/api').replace(/\/api$/, '')}/${summary.lastPrediction.imageUrl.replace(/^\//, '')}` : undefined}
         />
       </div>
 
@@ -291,6 +307,15 @@ export default function OrchardDetail() {
                 value={editForm.areaHectare ?? ''}
                 onChange={(e) => setEditForm({ ...editForm, areaHectare: e.target.value ? Number(e.target.value) : undefined })}
                 placeholder="Ör: 2.5"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Görsel URL (İsteğe Bağlı)</label>
+              <input
+                className="form-input"
+                value={editForm.imageUrl ?? ''}
+                onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                placeholder="https://... (Fotoğraf linki)"
               />
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>

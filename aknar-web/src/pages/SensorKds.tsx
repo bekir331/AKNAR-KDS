@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getOrchards } from '../api/orchards';
 import { getSensorKdsReport, getKdsStatus, trainSensorModel, getKdsHistory } from '../api/sensorKds';
 import type { Orchard } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 
 interface KdsHistory {
   id: string;
@@ -25,6 +26,7 @@ export default function SensorKds() {
   const [loading, setLoading] = useState(false);
   const [training, setTraining] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<KdsHistory[]>([]);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -73,8 +75,13 @@ export default function SensorKds() {
   const handleTrain = async () => {
     setTraining(true);
     try {
-      await trainSensorModel();
-      toast.success('Yapay zeka modeli başarıyla güncellendi.');
+      const result = await trainSensorModel();
+      const m = result.metrics;
+      if (m) {
+        toast.success(`Model eğitildi!\nBaşarı (R²): %${(m.RSquared * 100).toFixed(1)}\nHata: ${m.RootMeanSquaredError.toFixed(2)}`, { duration: 5000 });
+      } else {
+        toast.success('Yapay zeka modeli başarıyla güncellendi.');
+      }
       loadInitialData();
     } catch (error) {
       toast.error('Eğitim hatası.');
@@ -290,10 +297,9 @@ export default function SensorKds() {
                   <div style={{ 
                     fontSize: '15px', 
                     color: '#e2e8f0', 
-                    whiteSpace: 'pre-wrap',
                     fontFamily: 'inherit'
-                  }}>
-                    {report.advice}
+                  }} className="markdown-body">
+                    <ReactMarkdown>{report.advice}</ReactMarkdown>
                   </div>
                   
                   <div style={{ 
@@ -409,33 +415,64 @@ export default function SensorKds() {
               </thead>
               <tbody>
                 {analysisHistory.map((item, idx) => (
-                  <tr key={item.id} style={{
-                    borderBottom: idx < analysisHistory.length - 1 ? '1px solid var(--border)' : 'none',
-                    background: idx % 2 ? 'rgba(0,0,0,0.1)' : 'transparent'
-                  }}>
-                    <td style={{ padding: '12px' }}>
-                      {new Date(item.date).toLocaleString('tr-TR', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '12px' }}>{item.orchardName}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: item.score > 70 ? '#ef4444' : item.score > 40 ? '#f59e0b' : '#10b981' }}>
-                      {item.score}%
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        background: item.risk === 'KRİTİK' ? 'rgba(239,68,68,0.2)' : item.risk === 'ORTA RİSK' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)',
-                        color: item.risk === 'KRİTİK' ? '#ef4444' : item.risk === 'ORTA RİSK' ? '#f59e0b' : '#10b981'
+                  <React.Fragment key={item.id}>
+                    <tr style={{
+                      borderBottom: idx < analysisHistory.length - 1 && expandedRow !== item.id ? '1px solid var(--border)' : 'none',
+                      background: idx % 2 ? 'rgba(0,0,0,0.1)' : 'transparent',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setExpandedRow(expandedRow === item.id ? null : item.id)}
+                    title="Detayları görmek için tıklayın"
+                    >
+                      <td style={{ padding: '12px' }}>
+                        {new Date(item.date).toLocaleString('tr-TR', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '12px' }}>{item.orchardName}</td>
+                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: item.score > 70 ? '#ef4444' : item.score > 40 ? '#f59e0b' : '#10b981' }}>
+                        {item.score}%
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          background: item.risk === 'KRİTİK' ? 'rgba(239,68,68,0.2)' : item.risk === 'ORTA RİSK' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)',
+                          color: item.risk === 'KRİTİK' ? '#ef4444' : item.risk === 'ORTA RİSK' ? '#f59e0b' : '#10b981'
+                        }}>
+                          {item.risk}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', color: 'var(--text-secondary)', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.advice}
+                        <span style={{ fontSize: '10px', marginLeft: '8px', color: '#10b981' }}>{expandedRow === item.id ? '▲ Gizle' : '▼ Oku'}</span>
+                      </td>
+                    </tr>
+                    {expandedRow === item.id && (
+                      <tr style={{ 
+                        background: idx % 2 ? 'rgba(0,0,0,0.1)' : 'transparent', 
+                        borderBottom: idx < analysisHistory.length - 1 ? '1px solid var(--border)' : 'none' 
                       }}>
-                        {item.risk}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary)', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.advice}
-                    </td>
-                  </tr>
+                        <td colSpan={5} style={{ padding: '0 12px 16px 12px' }}>
+                          <div className="animate-fade-in markdown-body" style={{ 
+                            background: 'rgba(255,255,255,0.03)', 
+                            padding: '16px', 
+                            borderRadius: '8px', 
+                            fontSize: '13px', 
+                            lineHeight: '1.6', 
+                            color: 'var(--text-primary)', 
+                            borderLeft: '4px solid #10b981',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                          }}>
+                            <strong style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#10b981' }}>
+                              <span>💡</span> Detaylı Tavsiye:
+                            </strong>
+                            <ReactMarkdown>{item.advice}</ReactMarkdown>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

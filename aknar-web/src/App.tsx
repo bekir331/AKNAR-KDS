@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import Orchards from './pages/Orchards';
 import OrchardDetail from './pages/OrchardDetail';
@@ -125,6 +126,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<PublicRoute />} />
         <Route path="/register" element={<RegisterRoute />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/*" element={<ProtectedLayout />} />
       </Routes>
     </BrowserRouter>

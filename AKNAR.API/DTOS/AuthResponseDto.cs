@@ -1,4 +1,4 @@
-﻿namespace AKNAR.API.DTOS
+namespace AKNAR.API.DTOS
 {
     public class AuthResponseDto
     {
@@ -11,5 +11,6 @@
         public string Role { get; set; }
 
         public string Message { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }

@@ -5,6 +5,9 @@ obj/
 dist/
 build/
 .env
+.env.*
+**/.env
+**/.env.*
 *.user
 *.suo
 *.db
@@ -14,3 +17,19 @@ Thumbs.db
 aknar-web/node_modules/
 AKNAR.API/bin/
 AKNAR.API/obj/
+AKNAR.API/appsettings.json
+AKNAR.API/appsettings.Development.json
+AKNAR.API/appsettings.Local.json
+AKNAR.API/secrets.json
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+**/local.settings.json
+
+# ML egitim seti ve buyuk model dosyalari (GitHub 100 MB limiti)
+**/MLAssets/TrainingData/
+**/MLAssets/Models/model.zip
+
+# Kullanici tarafindan yuklenen gorseller
+**/wwwroot/uploads/

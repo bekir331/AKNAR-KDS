@@ -1,0 +1,11 @@
+COLUMN_NAME                                                                                                                     
+--------------------------------------------------------------------------------------------------------------------------------
+Id                                                                                                                              
+DiseaseName                                                                                                                     
+Description                                                                                                                     
+Treatment                                                                                                                       
+Prevention                                                                                                                      
+RiskLevel                                                                                                                       
+SeasonWarning                                                                                                                   
+
+(7 rows affected)

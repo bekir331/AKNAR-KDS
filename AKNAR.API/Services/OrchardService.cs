@@ -80,6 +80,8 @@ namespace AKNAR.API.Services
             orchard.Location    = dto.Location;
             orchard.Latitude    = dto.Latitude;
             orchard.Longitude   = dto.Longitude;
+            orchard.Boundaries  = dto.Boundaries;
+            orchard.ImageUrl    = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
             return true;
@@ -148,7 +150,8 @@ namespace AKNAR.API.Services
                     p.PredictedLabel,
                     p.Confidence,
                     p.RiskLevel,
-                    p.PredictedAt
+                    p.PredictedAt,
+                    ImageUrl = _context.LeafImages.Where(li => li.PredictionId == p.Id).Select(li => li.FilePath).FirstOrDefault()
                 })
                 .FirstOrDefaultAsync();
 

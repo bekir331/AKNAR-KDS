@@ -44,7 +44,7 @@ namespace AKNAR.API.Services
 
         public bool IsModelReady() => _predictionEngine != null;
 
-        public void TrainModel()
+        public Dictionary<string, double> TrainModel()
         {
             // 1. Veritabanından eğitim verisi topla
             // Not: Eğer veritabanı boşsa simüle edilmiş veri seti kullanıyoruz.
@@ -73,28 +73,40 @@ namespace AKNAR.API.Services
 
             var dataView = _mlContext.Data.LoadFromEnumerable(trainingData);
 
+            var splitData = _mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+
             // 2. ML Pipeline oluştur (Regression - Sayısal Tahmin)
             var pipeline = _mlContext.Transforms.Concatenate("Features", 
                 nameof(SensorTrainingData.SoilMoisture), 
                 nameof(SensorTrainingData.AirTemperature), 
                 nameof(SensorTrainingData.AirHumidity), 
                 nameof(SensorTrainingData.LightLevel))
-                .Append(_mlContext.Regression.Trainers.FastTree());
+                .Append(_mlContext.Regression.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
 
             // 3. Modeli Eğit
-            _trainedModel = pipeline.Fit(dataView);
+            _trainedModel = pipeline.Fit(splitData.TrainSet);
+
+            var predictions = _trainedModel.Transform(splitData.TestSet);
+            var metrics = _mlContext.Regression.Evaluate(predictions, labelColumnName: "Label", scoreColumnName: "Score");
 
             // 4. Kaydet
             var modelDir = Path.GetDirectoryName(_modelPath);
             if (!Directory.Exists(modelDir)) Directory.CreateDirectory(modelDir!);
             
-            _mlContext.Model.Save(_trainedModel, dataView.Schema, _modelPath);
+            _mlContext.Model.Save(_trainedModel, splitData.TrainSet.Schema, _modelPath);
 
             // 5. Motoru Yenile
             lock (_lock)
             {
                 _predictionEngine = _mlContext.Model.CreatePredictionEngine<SensorTrainingData, SensorScorePrediction>(_trainedModel);
             }
+
+            return new Dictionary<string, double>
+            {
+                { "RSquared", metrics.RSquared },
+                { "RootMeanSquaredError", metrics.RootMeanSquaredError },
+                { "MeanAbsoluteError", metrics.MeanAbsoluteError }
+            };
         }
 
         public float PredictScore(SensorReading reading)
@@ -154,13 +166,18 @@ namespace AKNAR.API.Services
             };
         }
 
-        public async Task<List<object>> GetHistoryAsync(int? orchardId)
+        public async Task<List<object>> GetHistoryAsync(int? orchardId, int? producerId = null)
         {
             var query = _db.SensorKdsReports.AsQueryable();
 
             if (orchardId.HasValue)
             {
                 query = query.Where(r => r.OrchardId == orchardId.Value);
+            }
+
+            if (producerId.HasValue)
+            {
+                query = query.Where(r => r.Orchard != null && r.Orchard.ProducerId == producerId.Value);
             }
 
             var list = await query

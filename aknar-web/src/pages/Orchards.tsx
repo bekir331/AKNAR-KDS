@@ -16,7 +16,9 @@ export default function Orchards() {
     areaHectare: undefined, 
     location: '',
     latitude: undefined,
-    longitude: undefined
+    longitude: undefined,
+    boundaries: undefined,
+    imageUrl: undefined
   });
 
   const navigate = useNavigate();
@@ -44,24 +46,27 @@ export default function Orchards() {
         location: form.location,
         latitude: form.latitude,
         longitude: form.longitude,
+        boundaries: form.boundaries,
+        imageUrl: form.imageUrl
       };
       await createOrchard(payload);
       toast.success('Bahçe oluşturuldu ✅');
       setShowModal(false);
-      setForm({ name: '', areaHectare: undefined, location: '', latitude: undefined, longitude: undefined });
+      setForm({ name: '', areaHectare: undefined, location: '', latitude: undefined, longitude: undefined, boundaries: undefined, imageUrl: undefined });
       load();
     } catch {
       toast.error('Bahçe oluşturulamadı');
     }
   };
 
-  const handleLocationSelect = (lat: number, lng: number, address: string, area?: number) => {
+  const handleLocationSelect = (lat: number, lng: number, address: string, area?: number, boundariesJson?: string) => {
     setForm(prev => ({
       ...prev,
       latitude: lat,
       longitude: lng,
       location: address || prev.location,
-      areaHectare: area || prev.areaHectare
+      areaHectare: area || prev.areaHectare,
+      boundaries: boundariesJson || prev.boundaries
     }));
     if (address) {
       toast.success('Konum belirlendi: ' + address.split(',')[0]);
@@ -130,66 +135,68 @@ export default function Orchards() {
       ) : (
         <div className="grid-auto">
           {orchards.map((orchard) => (
-            <div
-              key={orchard.id}
-              className={`card ${!orchard.isActive ? 'card-inactive' : ''}`}
-              style={{ cursor: 'pointer', opacity: orchard.isActive ? 1 : 0.7, border: orchard.isActive ? '' : '1px dashed var(--text-muted)' }}
-              onClick={() => orchard.isActive && navigate(`/orchards/${orchard.id}`)}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{
-                  width: '44px', height: '44px',
-                  background: orchard.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(107,114,128,0.12)',
-                  borderRadius: '10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '22px',
-                }}>
-                  {orchard.isActive ? '🌿' : '💤'}
+              <div
+                key={orchard.id}
+                className={`card ${!orchard.isActive ? 'card-inactive' : ''}`}
+                style={{ cursor: 'pointer', opacity: orchard.isActive ? 1 : 0.7, padding: 0, overflow: 'hidden', border: orchard.isActive ? '' : '1px dashed var(--text-muted)', display: 'flex', flexDirection: 'column' }}
+                onClick={() => orchard.isActive && navigate(`/orchards/${orchard.id}`)}
+              >
+                <div style={{ position: 'relative', height: '160px', width: '100%', flexShrink: 0 }}>
+                  <img 
+                    src={orchard.imageUrl || 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=600&q=80'}
+                    alt={orchard.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  {!orchard.isActive ? (
+
+                <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px', color: orchard.isActive ? '' : 'var(--text-muted)' }}>
+                    {orchard.name} {!orchard.isActive && '(Pasif)'}
+                  </h3>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    {orchard.location && <span>📍 {orchard.location}</span>}
+                    {orchard.areaHectare && <span>📐 {orchard.areaHectare} hektar</span>}
+                    {orchard.latitude && (
+                      <span style={{ color: 'var(--color-primary)' }}>
+                        🎯 {orchard.latitude.toFixed(4)}, {orchard.longitude?.toFixed(4)}
+                      </span>
+                    )}
+                    <span>📅 {new Date(orchard.createdAt).toLocaleDateString('tr-TR')}</span>
+                  </div>
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
                     <button
-                      className="btn btn-primary btn-sm"
-                      title="Aktifleştir"
-                      onClick={(e) => { e.stopPropagation(); handleActivate(orchard.id); }}
+                      className="btn btn-secondary btn-sm"
+                      disabled={!orchard.isActive}
+                      style={{ flex: 1, justifyContent: 'center' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if(orchard.isActive) navigate(`/orchards/${orchard.id}`);
+                      }}
                     >
-                      🚀 Aktif Et
+                      {orchard.isActive ? 'Detayı Görüntüle →' : 'Pasif Bahçe'}
                     </button>
-                  ) : (
-                    <button
-                      className="btn btn-danger btn-sm"
-                      title="Pasife Al"
-                      onClick={(e) => { e.stopPropagation(); handleDeactivate(orchard.id, orchard.name); }}
-                    >
-                      💤 Pasifleştir
-                    </button>
-                  )}
+                    {!orchard.isActive ? (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        title="Aktifleştir"
+                        style={{ flex: 1, justifyContent: 'center' }}
+                        onClick={(e) => { e.stopPropagation(); handleActivate(orchard.id); }}
+                      >
+                        🚀 Aktif Et
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        title="Pasife Al"
+                        style={{ flex: 1, justifyContent: 'center' }}
+                        onClick={(e) => { e.stopPropagation(); handleDeactivate(orchard.id, orchard.name); }}
+                      >
+                        💤 Pasifleştir
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px', color: orchard.isActive ? '' : 'var(--text-muted)' }}>
-                {orchard.name} {!orchard.isActive && '(Pasif)'}
-              </h3>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {orchard.location && <span>📍 {orchard.location}</span>}
-                {orchard.areaHectare && <span>📐 {orchard.areaHectare} hektar</span>}
-                {orchard.latitude && (
-                  <span style={{ fontSize: '10px', color: 'var(--color-primary)' }}>
-                    🎯 {orchard.latitude.toFixed(4)}, {orchard.longitude?.toFixed(4)}
-                  </span>
-                )}
-                <span>📅 {new Date(orchard.createdAt).toLocaleDateString('tr-TR')}</span>
-              </div>
-              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                <button
-                  className="btn btn-secondary btn-sm w-full"
-                  disabled={!orchard.isActive}
-                  style={{ justifyContent: 'center' }}
-                  onClick={() => navigate(`/orchards/${orchard.id}`)}
-                >
-                  {orchard.isActive ? 'Detayı Görüntüle →' : 'Pasif Bahçe'}
-                </button>
-              </div>
-            </div>
           ))}
         </div>
       )}
@@ -242,6 +249,16 @@ export default function Orchards() {
                     Koordinatlar kaydedildi: {form.latitude.toFixed(6)}, {form.longitude?.toFixed(6)}
                   </div>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Görsel URL (İsteğe Bağlı)</label>
+                <input
+                  className="form-input"
+                  placeholder="https://... (Fotoğraf linki)"
+                  value={form.imageUrl ?? ''}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                />
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>

@@ -8,10 +8,17 @@ namespace AKNAR.API.Services
     public class SensorReadingService : ISensorReadingService
     {
         private readonly AknarKdsContext _context;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<SensorReadingService> _logger;
 
-        public SensorReadingService(AknarKdsContext context)
+        public SensorReadingService(
+            AknarKdsContext context,
+            IEmailService emailService,
+            ILogger<SensorReadingService> logger)
         {
             _context = context;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<List<SensorReading>> GetByDeviceAsync(int deviceId)
@@ -135,6 +142,11 @@ namespace AKNAR.API.Services
                             CreatedAt = DateTime.Now
                         });
                         anyChanged = true;
+
+                        if (type == "LowMoisture")
+                        {
+                            await SendEmailAlertAsync(device.OrchardId, message);
+                        }
                     }
                     else
                     {
@@ -157,6 +169,50 @@ namespace AKNAR.API.Services
 
             if (anyChanged)
                 await _context.SaveChangesAsync();
+        }
+
+        private async Task SendEmailAlertAsync(int orchardId, string alertMessage)
+        {
+            try
+            {
+                var orchard = await _context.Orchards
+                    .Include(o => o.Producer)
+                    .ThenInclude(p => p.User)
+                    .FirstOrDefaultAsync(o => o.Id == orchardId);
+
+                if (orchard?.Producer?.User?.Email != null)
+                {
+                    string subject = $"ACİL SULAMA UYARISI - {orchard.Name}";
+                    string body = $@"
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);'>
+                            <div style='background-color: #ef4444; padding: 20px; text-align: center;'>
+                                <h2 style='color: white; margin: 0; font-size: 24px; letter-spacing: 1px;'>ACİL SULAMA UYARISI</h2>
+                            </div>
+                            <div style='padding: 30px; background-color: #ffffff;'>
+                                <p style='font-size: 16px; color: #374151; margin-top: 0;'>Sayın <strong>{orchard.Producer.User.FullName}</strong>,</p>
+                                <p style='font-size: 16px; color: #4b5563; line-height: 1.5;'>
+                                    <strong>{orchard.Name}</strong> bahçenizdeki sensörlerden kritik bir düşüş tespit edildi. Bitkilerinizin sağlığını korumak için acilen müdahale etmeniz gerekebilir.
+                                </p>
+                                <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 25px 0; border-radius: 0 4px 4px 0;'>
+                                    <p style='margin: 0; color: #b91c1c; font-size: 16px; font-weight: bold;'>{alertMessage}</p>
+                                </div>
+                                <p style='font-size: 16px; color: #4b5563; line-height: 1.5;'>
+                                    Lütfen en kısa sürede bahçenizi kontrol edin ve sulama işlemini başlatın. Uygulama üzerinden detaylı değerleri görebilirsiniz.
+                                </p>
+                            </div>
+                            <div style='background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #e5e7eb;'>
+                                <p style='margin: 0; font-size: 12px; color: #9ca3af;'>Bu e-posta AKNAR KDS (Karar Destek Sistemi) tarafından otomatik olarak oluşturulmuştur.</p>
+                            </div>
+                        </div>";
+
+                    await _emailService.SendEmailAsync(orchard.Producer.User.Email, subject, body);
+                    _logger.LogInformation($"Acil sulama uyarı e-postası gönderildi: {orchard.Producer.User.Email}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Uyarı e-postası gönderilirken hata oluştu.");
+            }
         }
     }
 }

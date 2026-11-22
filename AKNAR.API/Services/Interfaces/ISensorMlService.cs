@@ -12,7 +12,7 @@ namespace AKNAR.API.Services.Interfaces
         /// <summary>
         /// Mevcut sensör verileriyle modeli eğitir ve kaydeder.
         /// </summary>
-        void TrainModel();
+        Dictionary<string, double> TrainModel();
 
         /// <summary>
         /// Verilen sensör verisine göre sulama skoru tahmini yapar.
@@ -27,6 +27,6 @@ namespace AKNAR.API.Services.Interfaces
         /// <summary>
         /// Bahçe bazlı veya tüm geçmiş analizleri getirir.
         /// </summary>
-        Task<List<object>> GetHistoryAsync(int? orchardId);
+        Task<List<object>> GetHistoryAsync(int? orchardId, int? producerId = null);
     }
 }

@@ -17,3 +17,8 @@ export const getMe = async () => {
   const res = await apiClient.get('/Auth/me');
   return res.data;
 };
+
+export const verifyEmail = async (userId: number, token: string) => {
+  const res = await apiClient.get(`/Auth/verify-email?userId=${userId}&token=${encodeURIComponent(token)}`);
+  return res.data;
+};

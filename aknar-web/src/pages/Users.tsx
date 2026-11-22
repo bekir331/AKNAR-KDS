@@ -8,7 +8,7 @@ export default function Users() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState<CreateSystemUserDto>({
     fullName: '',
@@ -57,9 +57,9 @@ export default function Users() {
       toast.error('Kendi hesabınızı silemezsiniz');
       return;
     }
-    
+
     if (!window.confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
-    
+
     try {
       await deleteUser(id);
       toast.success('Kullanıcı silindi');
@@ -91,45 +91,44 @@ export default function Users() {
           <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label">Rol</label>
-              <select 
-                className="form-select" 
-                value={formData.role} 
+              <select
+                className="form-select"
+                value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
               >
                 <option value="Producer">Üretici (Producer)</option>
-                <option value="Consultant">Danışman (Consultant)</option>
                 <option value="Admin">Sistem Yöneticisi (Admin)</option>
               </select>
             </div>
-            
+
             <div className="form-group">
               <label className="form-label">Ad Soyad</label>
-              <input 
-                className="form-input" 
-                value={formData.fullName} 
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} 
+              <input
+                className="form-input"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 placeholder="Örn: Ahmet Yılmaz"
               />
             </div>
-            
+
             <div className="form-group">
               <label className="form-label">E-posta</label>
-              <input 
-                className="form-input" 
+              <input
+                className="form-input"
                 type="email"
-                value={formData.email} 
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="ornek@aknar.com"
               />
             </div>
-            
+
             <div className="form-group">
               <label className="form-label">Şifre (Opsiyonel)</label>
-              <input 
-                className="form-input" 
+              <input
+                className="form-input"
                 type="password"
-                value={formData.password} 
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Boş bırakılırsa: 123456"
               />
             </div>
@@ -138,19 +137,19 @@ export default function Users() {
               <>
                 <div className="form-group">
                   <label className="form-label">Telefon</label>
-                  <input 
-                    className="form-input" 
-                    value={formData.phone} 
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="05XX XXX XX XX"
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Şehir</label>
-                  <input 
-                    className="form-input" 
-                    value={formData.city} 
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     placeholder="Örn: Adana"
                   />
                 </div>
@@ -179,16 +178,16 @@ export default function Users() {
             </thead>
             <tbody>
               {users.map((u, index) => {
-                const isMe = u.id === currentUser?.userId;
+                const isMe = u.userId === currentUser?.userId;
                 return (
-                  <tr key={u.id || `user-${index}`}>
+                  <tr key={u.userId || `user-${index}`}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '50%',
-                          background: u.role === 'Admin' ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 
-                                      u.role === 'Consultant' ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' :
-                                      'linear-gradient(135deg, #10b981, #059669)',
+                          background: u.role === 'Admin' ? 'linear-gradient(135deg, #ef4444, #b91c1c)' :
+                            u.role === 'Consultant' ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' :
+                              'linear-gradient(135deg, #10b981, #059669)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '12px', fontWeight: 700, color: 'white'
                         }}>
@@ -202,10 +201,9 @@ export default function Users() {
                       </div>
                     </td>
                     <td>
-                      <span className={`badge ${
-                        u.role === 'Admin' ? 'badge-red' : 
+                      <span className={`badge ${u.role === 'Admin' ? 'badge-red' :
                         u.role === 'Consultant' ? 'badge-blue' : 'badge-green'
-                      }`}>
+                        }`}>
                         {u.role === 'Admin' ? 'Yönetici' : u.role === 'Consultant' ? 'Danışman' : 'Üretici'}
                       </span>
                     </td>
@@ -214,14 +212,15 @@ export default function Users() {
                       {new Date(u.createdAt).toLocaleDateString('tr-TR')}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button 
-                        className="btn btn-sm" 
-                        style={{ color: 'var(--color-danger)', border: '1px solid var(--border)' }}
-                        onClick={() => handleDelete(u.id)}
-                        disabled={isMe}
-                      >
-                        Sil
-                      </button>
+                      {!isMe && (
+                        <button
+                          className="btn btn-sm"
+                          style={{ color: 'var(--color-danger)', border: '1px solid var(--border)' }}
+                          onClick={() => handleDelete(u.userId)}
+                        >
+                          Sil
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

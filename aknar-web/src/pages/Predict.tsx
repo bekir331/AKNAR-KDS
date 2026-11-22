@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Cropper from 'react-easy-crop';
+import ReactMarkdown from 'react-markdown';
 import { predictLeaf } from '../api/predictions';
 import { getOrchards } from '../api/orchards';
-import { useEffect } from 'react';
 import type { Orchard, MLPrediction } from '../types';
 import toast from 'react-hot-toast';
+import { getCroppedImg } from '../utils/cropImage';
 
 const riskBadge: Record<string, string> = {
   Low: 'badge-green',
@@ -21,6 +23,11 @@ export default function Predict() {
   const [result, setResult] = useState<MLPrediction | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+
   useEffect(() => {
     getOrchards().then(setOrchards).catch(() => {});
   }, []);
@@ -31,7 +38,26 @@ export default function Predict() {
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setResult(null);
+    setShowCropModal(true);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
   }, []);
+
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleCropConfirm = async () => {
+    try {
+      if (!preview || !croppedAreaPixels) return;
+      const croppedFile = await getCroppedImg(preview, croppedAreaPixels, file?.name ?? 'cropped.jpg');
+      setFile(croppedFile);
+      setPreview(URL.createObjectURL(croppedFile));
+      setShowCropModal(false);
+    } catch (e) {
+      toast.error('Resim kırpılamadı');
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -109,7 +135,7 @@ export default function Predict() {
               }}
             >
               <input {...getInputProps()} />
-              {preview ? (
+              {preview && !showCropModal ? (
                 <div>
                   <img
                     src={preview}
@@ -139,6 +165,35 @@ export default function Predict() {
                 </>
               )}
             </div>
+
+            {/* Crop Modal / Inline Editor */}
+            {showCropModal && preview && (
+              <div style={{
+                marginTop: '16px',
+                padding: '16px',
+                background: 'rgba(13,17,23,0.8)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+              }}>
+                <h4 style={{ marginBottom: '12px', fontSize: '13px', color: '#10b981' }}>✂️ Yaprağı Çerçeveye Sığdırın</h4>
+                <div style={{ position: 'relative', width: '100%', height: '300px', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+                  <Cropper
+                    image={preview}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={4 / 3}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                  />
+                </div>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); setResult(null); setShowCropModal(false); }}>İptal</button>
+                  <button className="btn btn-secondary" onClick={() => setShowCropModal(false)}>Kırpmadan Kullan</button>
+                  <button className="btn btn-primary" onClick={handleCropConfirm}>✅ Kırp ve Onayla</button>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -228,15 +283,14 @@ export default function Predict() {
                     background: 'rgba(13,17,23,0.6)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '14px',
-                    fontSize: '13px',
+                    padding: '16px',
+                    fontSize: '14px',
                     color: 'var(--text-primary)',
                     lineHeight: '1.7',
-                    maxHeight: '320px',
+                    maxHeight: '400px',
                     overflowY: 'auto',
-                    whiteSpace: 'pre-wrap',
-                  }}>
-                    {result.geminiRecommendation}
+                  }} className="markdown-body">
+                    <ReactMarkdown>{result.geminiRecommendation}</ReactMarkdown>
                   </div>
                 </div>
               )}

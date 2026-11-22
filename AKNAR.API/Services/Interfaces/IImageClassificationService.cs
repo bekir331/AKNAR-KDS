@@ -1,10 +1,10 @@
-﻿using AKNAR.API.Models;
+using AKNAR.API.Models;
 
 namespace AKNAR.API.Services.Interfaces
 {
     public interface IImageClassificationService
     {
-        void TrainModel();
+        Dictionary<string, double> TrainModel();
 
         ImagePrediction Predict(byte[] imageBytes);
 

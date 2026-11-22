@@ -1,4 +1,4 @@
-﻿using AKNAR.API.DTOS;
+using AKNAR.API.DTOS;
 using AKNAR.API.Services;   
 using AKNAR.API.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -35,7 +35,11 @@ namespace AKNAR.API.Controllers
 
             var result = await _authService.LoginAsync(dto);
             if (result == null)
-                return BadRequest("Geçersiz email veya şifre.");
+                return BadRequest(new { error = "Geçersiz email veya şifre." });
+            
+            if (string.IsNullOrEmpty(result.Token))
+                return BadRequest(new { error = result.Message });
+
             return Ok(result);
         }
 
@@ -136,6 +140,17 @@ namespace AKNAR.API.Controllers
             if (!success)
                 return NotFound(new { error = "Kullanıcı bulunamadı." });
             return Ok(new { message = "Kullanıcı silindi." });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromQuery] int userId, [FromQuery] string token)
+        {
+            var success = await _authService.VerifyEmailAsync(userId, token);
+            if (!success)
+                return BadRequest(new { error = "Doğrulama linki geçersiz veya süresi dolmuş." });
+
+            return Ok(new { message = "E-posta adresiniz başarıyla doğrulandı. Artık giriş yapabilirsiniz." });
         }
 
 

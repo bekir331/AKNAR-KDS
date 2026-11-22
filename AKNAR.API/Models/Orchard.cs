@@ -16,6 +16,8 @@ public partial class Orchard
     public string? Location { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
+    public string? Boundaries { get; set; }
+    public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

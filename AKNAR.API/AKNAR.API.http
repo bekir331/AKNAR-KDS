@@ -1,0 +1,6 @@
+@AKNAR.API_HostAddress = http://localhost:5139
+
+GET {{AKNAR.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

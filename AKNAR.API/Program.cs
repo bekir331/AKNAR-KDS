@@ -60,6 +60,8 @@ builder.Services.AddScoped<IOrchardService, OrchardService>();
 
 builder.Services.AddScoped<IAlertService, AlertService>();
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IDeviceService, DeviceService>();

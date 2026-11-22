@@ -13,7 +13,7 @@ const icon = L.icon({
 });
 
 interface LocationPickerProps {
-  onLocationSelect: (lat: number, lng: number, address: string, area?: number) => void;
+  onLocationSelect: (lat: number, lng: number, address: string, area?: number, boundaries?: string) => void;
   initialLocation?: {
     latitude: number;
     longitude: number;
@@ -142,6 +142,7 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
       let lat = 0;
       let lng = 0;
       let areaHectare = 0;
+      let boundariesJson: string | undefined = undefined;
 
       const calculateArea = (latlngs: any[]) => {
         let total = 0;
@@ -162,6 +163,9 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
         const center = layer.getBounds().getCenter();
         lat = center.lat;
         lng = center.lng;
+
+        const points = latlngs.map((p: any) => ({ lat: p.lat, lng: p.lng }));
+        boundariesJson = JSON.stringify(points);
       } else if (e.shape === 'Marker') {
         const latlng = layer.getLatLng();
         lat = latlng.lat;
@@ -173,9 +177,9 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
         const data = await res.json();
         const address = data.display_name.split(',').slice(0, 3).join(',').trim();
-        onLocationSelect(lat, lng, address, areaHectare);
+        onLocationSelect(lat, lng, address, areaHectare, boundariesJson);
       } catch (error) {
-        onLocationSelect(lat, lng, "", areaHectare);
+        onLocationSelect(lat, lng, "", areaHectare, boundariesJson);
       }
     });
 
@@ -202,6 +206,7 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
       let lat = 0;
       let lng = 0;
       let areaHectare = 0;
+      let boundariesJson: string | undefined = undefined;
 
       const calculateArea = (latlngs: any[]) => {
         let total = 0;
@@ -222,6 +227,9 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
           const center = layer.getBounds().getCenter();
           lat = center.lat;
           lng = center.lng;
+
+          const points = latlngs[0].map((p: any) => ({ lat: p.lat, lng: p.lng }));
+          boundariesJson = JSON.stringify(points);
         }
       } else {
         const latlng = layer.getLatLng();
@@ -233,9 +241,9 @@ export default function LocationPicker({ onLocationSelect, initialLocation }: Lo
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
         const data = await res.json();
         const address = data.display_name.split(',').slice(0, 3).join(',').trim();
-        onLocationSelect(lat, lng, address, areaHectare);
+        onLocationSelect(lat, lng, address, areaHectare, boundariesJson);
       } catch (error) {
-        onLocationSelect(lat, lng, "", areaHectare);
+        onLocationSelect(lat, lng, "", areaHectare, boundariesJson);
       }
     });
 

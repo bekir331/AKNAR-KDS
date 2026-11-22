@@ -267,14 +267,15 @@ namespace AKNAR.API.Services
                             {
                                 new
                                 {
-                                    text = "Bu görsele bak ve SADECE şu soruyu yanıtla: Bu görsel bir bitki yaprağı mı? " +
+                                    text = "Bu görsele bak ve SADECE şu soruyu yanıtla: Bu görselde bitki yaprağı (veya yaprakları) var mı? " +
+                                           "(Not: Yapraklar çok hastalıklı, kurumuş, sararmış, böcek yenikli olabilir veya birden fazla yaprak bir arada olabilir. Bunlar da kesinlikle 'EVET' sayılmalıdır.) " +
                                            "Yanıtını SADECE şu formatta ver, başka hiçbir şey yazma:\n" +
                                            "EVET - [kısa açıklama]\n" +
                                            "veya\n" +
                                            "HAYIR - [kısa açıklama]\n\n" +
                                            "Örnek doğru yanıtlar:\n" +
-                                           "EVET - Narenciye yaprağı görülüyor\n" +
-                                           "HAYIR - Bu bir ekran görüntüsü, yaprak değil"
+                                           "EVET - Hastalıklı narenciye yaprakları görülüyor\n" +
+                                           "HAYIR - Bu bir araba fotoğrafı, bitki yok"
                                 },
                                 new
                                 {

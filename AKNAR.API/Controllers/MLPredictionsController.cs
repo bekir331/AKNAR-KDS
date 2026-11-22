@@ -43,8 +43,18 @@ namespace AKNAR.API.Controllers
 
             var predictions = await _context.Mlpredictions
                 .Where(p => p.OrchardId == orchardId)
-                 .OrderByDescending(p => p.PredictedAt)
-                 .ToListAsync();
+                .OrderByDescending(p => p.PredictedAt)
+                .Select(p => new
+                {
+                    Id = p.Id,
+                    OrchardId = p.OrchardId,
+                    PredictedLabel = p.PredictedLabel,
+                    Confidence = p.Confidence,
+                    RiskLevel = p.RiskLevel,
+                    PredictedAt = p.PredictedAt,
+                    ImageUrl = _context.LeafImages.Where(l => l.PredictionId == p.Id).Select(l => "/" + l.FilePath).FirstOrDefault()
+                })
+                .ToListAsync();
             return Ok(predictions);
         }
 
@@ -54,8 +64,8 @@ namespace AKNAR.API.Controllers
         {
             try
             {
-                _imageService.TrainModel();
-                return Ok(new { message = "Model eğitildi." });
+                var metrics = _imageService.TrainModel();
+                return Ok(new { message = "Model eğitildi.", metrics = metrics });
 
             }
 
@@ -107,7 +117,7 @@ namespace AKNAR.API.Controllers
             double confidence = Math.Round(maxScore * 100, 2);
 
       
-            if (confidence < 85)
+            if (confidence < 70)
             {
                 return Ok(new
                 {

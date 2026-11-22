@@ -138,8 +138,17 @@ export default function Dashboard() {
                   {cards.map(({ orchard, summary }) => (
                     <tr key={orchard.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/orchards/${orchard.id}`)}>
                       <td>
-                        <div style={{ fontWeight: 600 }}>{orchard.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{orchard.location}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img 
+                            src={orchard.imageUrl || 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=100&q=80'} 
+                            alt={orchard.name}
+                            style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{orchard.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{orchard.location}</div>
+                          </div>
+                        </div>
                       </td>
                       <td>{summary?.lastReading?.soilMoisture?.toFixed(1) ?? '—'}%</td>
                       <td>{summary?.lastReading?.airTemperature?.toFixed(1) ?? '—'}°C</td>
@@ -200,12 +209,20 @@ export default function Dashboard() {
           <div className="card">
             <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>🔬 Son ML Tahmini</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '12px',
-                background: 'rgba(139,92,246,0.15)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '28px',
-              }}>🍃</div>
+              {pred.imageUrl ? (
+                <img 
+                  src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5139/api').replace(/\/api$/, '')}/${pred.imageUrl.replace(/^\//, '')}`}
+                  alt="Tahmin Görseli"
+                  style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+              ) : (
+                <div style={{
+                  width: '56px', height: '56px', borderRadius: '12px',
+                  background: 'rgba(139,92,246,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '28px',
+                }}>🍃</div>
+              )}
               <div>
                 <div style={{ fontSize: '18px', fontWeight: 700 }}>{pred.predictedLabel}</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>

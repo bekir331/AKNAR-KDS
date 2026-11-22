@@ -1,4 +1,4 @@
-﻿
+
 using AKNAR.API.DTOS;
 namespace AKNAR.API.Services.Interfaces
 {
@@ -13,6 +13,7 @@ namespace AKNAR.API.Services.Interfaces
 
         Task<List<AuthResponseDto>> GetAllUsersAsync();
         Task<bool> DeleteUserAsync(int userId);
+        Task<bool> VerifyEmailAsync(int userId, string token);
 
 
     }

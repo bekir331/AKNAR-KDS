@@ -110,7 +110,9 @@ namespace AKNAR.API.Controllers
                 AreaHectare = dto.AreaHectare,
                 Location = dto.Location,
                 Latitude = dto.Latitude,
-                Longitude = dto.Longitude
+                Longitude = dto.Longitude,
+                Boundaries = dto.Boundaries,
+                ImageUrl = dto.ImageUrl
             };
 
             var result = await _orchardService.CreateAsync(orchard);

@@ -1,4 +1,4 @@
-﻿using Microsoft.ML;
+using Microsoft.ML;
 using Microsoft.ML.Vision;
 using AKNAR.API.Models;
 using AKNAR.API.Services.Interfaces;
@@ -32,7 +32,7 @@ namespace AKNAR.API.Services
 
         public bool IsModelReady() => _predictionEngine != null;
 
-        public void TrainModel()
+        public Dictionary<string, double> TrainModel()
         {
             var imageDataList = new List<ImageData>();
 
@@ -64,6 +64,8 @@ namespace AKNAR.API.Services
 
             var dataView = _mlContext.Data.LoadFromEnumerable(shuffled);
 
+            var splitData = _mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+
             var pipeline = _mlContext.Transforms.Conversion
                 .MapValueToKey("LabelKey", "Label")
                 .Append(_mlContext.Transforms.LoadRawImageBytes(
@@ -81,16 +83,26 @@ namespace AKNAR.API.Services
                 .Append(_mlContext.Transforms.Conversion
                     .MapKeyToValue("PredictedLabel", "PredictedLabel"));
 
-            _trainedModel = pipeline.Fit(dataView);
+            _trainedModel = pipeline.Fit(splitData.TrainSet);
+
+            var predictions = _trainedModel.Transform(splitData.TestSet);
+            var metrics = _mlContext.MulticlassClassification.Evaluate(predictions, labelColumnName: "LabelKey", predictedLabelColumnName: "PredictedLabel");
 
             var modelDir = Path.GetDirectoryName(_modelPath);
             if (!Directory.Exists(modelDir))
                 Directory.CreateDirectory(modelDir!);
 
-            _mlContext.Model.Save(_trainedModel, dataView.Schema, _modelPath);
+            _mlContext.Model.Save(_trainedModel, splitData.TrainSet.Schema, _modelPath);
 
             _predictionEngine = _mlContext.Model
                 .CreatePredictionEngine<ImageData, ImagePrediction>(_trainedModel);
+
+            return new Dictionary<string, double>
+            {
+                { "MicroAccuracy", metrics.MicroAccuracy },
+                { "MacroAccuracy", metrics.MacroAccuracy },
+                { "LogLoss", metrics.LogLoss }
+            };
         }
 
         public ImagePrediction Predict(byte[] imageBytes)

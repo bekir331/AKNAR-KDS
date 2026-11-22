@@ -32,6 +32,8 @@ export interface Orchard {
   producerId: number;
   isActive: boolean;
   createdAt: string;
+  boundaries?: string;
+  imageUrl?: string;
 }
 
 export interface CreateOrchardDto {
@@ -41,6 +43,8 @@ export interface CreateOrchardDto {
   latitude?: number;
   longitude?: number;
   producerId?: number;
+  boundaries?: string;
+  imageUrl?: string;
 }
 
 export interface UpdateOrchardDto {
@@ -49,6 +53,8 @@ export interface UpdateOrchardDto {
   location?: string;
   latitude?: number;
   longitude?: number;
+  boundaries?: string;
+  imageUrl?: string;
 }
 
 // Sensor
@@ -79,6 +85,7 @@ export interface OrchardSummary {
     confidence: number;
     riskLevel: string;
     predictedAt: string;
+    imageUrl?: string;
   };
   lastIrrigation?: {
     id: number;
@@ -165,7 +172,7 @@ export interface CreateDeviceDto {
 
 // User Management
 export interface User {
-  id: number;
+  userId: number;
   fullName: string;
   email: string;
   role: string;

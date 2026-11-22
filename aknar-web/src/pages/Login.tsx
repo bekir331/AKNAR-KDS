@@ -22,8 +22,9 @@ export default function Login() {
       toast.success(`Hoş geldiniz! 🍊`);
       // Role göre yönlendirme
       navigate(user.role === 'Producer' ? '/orchards' : '/dashboard');
-    } catch {
-      toast.error('E-posta veya şifre hatalı');
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'E-posta veya şifre hatalı';
+      toast.error(msg, { duration: 5000 });
     } finally {
       setLoading(false);
     }
@@ -35,7 +36,11 @@ export default function Login() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg-base)',
+      // 'background' yerine 'backgroundImage' kullanıyoruz ve karanlık filtresini çok daha hafif (0.4) yapıyoruz
+      backgroundImage: `linear-gradient(rgba(10, 15, 20, 0.4), rgba(10, 15, 20, 0.5)), url('/bg-lemon.jpg')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
       position: 'relative',
       overflow: 'hidden',
     }}>
@@ -53,27 +58,36 @@ export default function Login() {
       <div style={{ width: '100%', maxWidth: '420px', padding: '24px', zIndex: 1 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{
-            width: '64px', height: '64px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            borderRadius: '18px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '32px', margin: '0 auto 16px',
-            boxShadow: '0 8px 32px rgba(16,185,129,0.3)',
+          <h1 style={{
+            fontSize: '36px',
+            fontWeight: 800,
+            color: '#ffffff',
+            marginBottom: '6px',
+            textShadow: '0 4px 16px rgba(0,0,0,0.8)',
+            letterSpacing: '1px'
           }}>
-            🍊
-          </div>
-          <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
             AKNAR-KDS
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+          <p style={{
+            color: '#f8fafc',
+            fontSize: '15px',
+            fontWeight: 500,
+            textShadow: '0 2px 8px rgba(0,0,0,0.9)'
+          }}>
             IoT Entegre Narenciye Karar Destek Sistemi
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="card" style={{ padding: '32px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '24px', color: 'var(--text-primary)' }}>
+        <div className="card" style={{
+          padding: '32px',
+          background: 'rgba(20, 25, 35, 0.6)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+        }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '24px', color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
             Giriş Yap
           </h2>
 
@@ -134,8 +148,8 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', marginTop: '20px' }}>
-          AKNAR-KDS © 2026 · Mersin Narenciye Yönetim Sistemi
+        <p style={{ textAlign: 'center', color: '#cbd5e1', fontSize: '12px', marginTop: '24px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+          AKNAR-KDS © 2026 · Akıllı Narenciye Yönetim Sistemi
         </p>
       </div>
     </div>
